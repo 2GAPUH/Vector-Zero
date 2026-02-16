@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://cv0pxxyxn3hv4"]
+
+[ext_resource type="Texture2D" uid="uid://bnmyia3lvh1ec" path="res://resources/momonga_Dungeon.png" id="1_dnktw"]
+[ext_resource type="Script" uid="uid://dcxsppphpdp0" path="res://scripts/entity.gd" id="1_yo0ht"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oebmh"]
+size = Vector2(16, 16)
+
+[node name="Entity" type="Area2D"]
+script = ExtResource("1_yo0ht")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_oebmh")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_dnktw")

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://li7s6s3vfqy5"]
+
+[ext_resource type="PackedScene" uid="uid://cv0pxxyxn3hv4" path="res://scenes/Entity.tscn" id="1_p0vlq"]
+[ext_resource type="Script" uid="uid://bqbgkca8n2h45" path="res://scripts/player.gd" id="2_v6fml"]
+
+[node name="Entity" unique_id=946153565 instance=ExtResource("1_p0vlq")]
+script = ExtResource("2_v6fml")
+
+[node name="Sprite2D" parent="." index="1"]
+position = Vector2(-1, -8)
+region_enabled = true
+region_rect = Rect2(5, 70, 20, 26)
+
+[node name="Camera2D" type="Camera2D" parent="." index="2" unique_id=885966426]
+zoom = Vector2(4, 4)
