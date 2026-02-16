@@ -4,6 +4,7 @@ var is_my_turn = false
 
 func _ready() -> void:
 	speed = 10
+	pass
 
 func _start_turn() -> void:
 	is_my_turn = true
