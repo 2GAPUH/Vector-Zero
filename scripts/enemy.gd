@@ -1,19 +1,27 @@
 extends Entity
 class_name Enemy
 
-
-
 func _start_turn() -> void:
-	move_ai()
-
-func move_ai() -> void:
-	if not current_level:
+	var move_dir: Vector2i = _calculate_move_direction()
+	
+	if move_dir != Vector2i.ZERO:
+		var action: MoveAction = MoveAction.new(self, move_dir)
+		emit_signal("request_action", action)
+	else:
 		emit_signal("turn_finished")
-		print("Level not initialized")
-		return
+
+func get_intent() -> Intent:
+	var move_dir: Vector2i = _calculate_move_direction()
+	
+	if move_dir != Vector2i.ZERO:
+		return MoveIntent.new(self, move_dir)
+	return null
+
+func _calculate_move_direction() -> Vector2i:
+	if not current_level:
+		return Vector2i.ZERO
 	
 	var target_pos: Vector2i = current_level.get_player_position()
-	
 	var direction: Vector2i = target_pos - tile_position
 	
 	var move_dir: Vector2i = Vector2i.ZERO
@@ -23,10 +31,4 @@ func move_ai() -> void:
 	elif direction.y != 0:
 		move_dir.y = sign(direction.y)
 	
-	if move_dir != Vector2i.ZERO:
-		print("Move requsted")
-		var action = MoveAction.new(self, move_dir)
-		emit_signal("request_action", action)
-	else:
-		print("Zero movement")
-		emit_signal("turn_finished")
+	return move_dir
