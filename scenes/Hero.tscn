@@ -10,6 +10,3 @@ script = ExtResource("2_hero")
 position = Vector2(-1, -8)
 region_enabled = true
 region_rect = Rect2(5, 70, 20, 26)
-
-[node name="Camera2D" type="Camera2D" parent="." index="2" unique_id=885966426]
-zoom = Vector2(4, 4)

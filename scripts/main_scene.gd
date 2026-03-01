@@ -2,6 +2,7 @@ extends Node2D
 
 # Ссылки на узлы
 @onready var level: Level = $Level
+@onready var camera: CameraController = $Camera
 @onready var game_ui: Control = $CanvasLayer/GameUI
 
 # Герои
@@ -49,6 +50,7 @@ func _setup_entities() -> void:
 func _connect_signals() -> void:
 	# Сигналы RoundManager
 	round_manager.round_started.connect(_on_round_started)
+	round_manager.turn_preparing.connect(_on_turn_preparing)
 	round_manager.turn_started.connect(_on_turn_started)
 	round_manager.turn_finished.connect(_on_turn_finished)
 	round_manager.round_finished.connect(_on_round_finished)
@@ -73,6 +75,10 @@ func _start_game() -> void:
 	# Передаём порядок ходов в UI
 	game_ui.set_turn_order(round_manager.get_turn_order())
 	
+	# Перемещаем камеру к первому герою
+	if heroes.size() > 0:
+		camera.teleport_to_entity(heroes[0])
+	
 	round_manager.start_game()
 
 
@@ -82,6 +88,16 @@ func _on_round_started(round_number: int) -> void:
 	print("=== Round ", round_number, " started ===")
 	game_ui.update_round_text(round_number)
 	history_manager.start_new_round(round_number)
+
+
+func _on_turn_preparing(entity: Entity) -> void:
+	print("Turn preparing: ", entity.name)
+	
+	# Перемещаем камеру к сущности (плавно, если не видна)
+	await camera.move_to_entity_async(entity)
+	
+	# Подтверждаем начало хода
+	round_manager.confirm_turn_start()
 
 
 func _on_turn_started(entity: Entity) -> void:
