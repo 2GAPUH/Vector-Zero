@@ -8,6 +8,7 @@ var tile_position: Vector2i = Vector2i.ZERO
 var movement_vect: Vector2i = Vector2i.ZERO
 @export var speed: int = 1;
 var current_level: Level
+var controller: Controller = null
 
 var history: Array[Action] = []
 
@@ -37,4 +38,6 @@ func move_fail():
 		emit_signal("turn_finished")
 
 func get_intent() -> Intent:
+		if controller != null:
+				return controller.get_intent()
 		return null
