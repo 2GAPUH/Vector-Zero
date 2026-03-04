@@ -1,27 +1,50 @@
 class_name MoveAction
 extends Action
 
-var direction: Vector2i
-var start_pos: Vector2i
-var target_pos: Vector2i
+# === ДЕЙСТВИЕ: ПЕРЕМЕЩЕНИЕ ===
 
-func _init(actor: Entity, dir: Vector2i) -> void:
+# Путь перемещения (массив позиций)
+var path: Array[Vector2i] = []
+
+# Начальная позиция
+var start_pos: Vector2i = Vector2i.ZERO
+
+# Конечная позиция
+var target_pos: Vector2i = Vector2i.ZERO
+
+
+# Инициализация с путём
+func _init(actor: Entity, move_path: Array[Vector2i]) -> void:
 	super(actor)
-	direction = dir
+	path = move_path
+	start_pos = actor.tile_position
+	if move_path.size() > 0:
+		target_pos = move_path[move_path.size() - 1]
 
+
+# === ВЫПОЛНЕНИЕ ПЕРЕМЕЩЕНИЯ ===
 func execute(level: Level) -> bool:
-	start_pos = entity.tile_position
-	target_pos = start_pos + direction
-	
-	if level.is_cell_free(target_pos) and level.is_tile_passable(target_pos):
-		level.update_entity_position(start_pos, target_pos, entity)
-		entity.move_success(direction)
-		return true
-	else:
-		print("Cell is unpassable or occupied")
+	if path.is_empty():
 		entity.move_fail()
 		return false
+	
+	# Обновляем позицию на уровне
+	level.update_entity_position(start_pos, target_pos, entity)
+	
+	# Обновляем позицию сущности
+	entity.tile_position = target_pos
+	
+	# Запускаем последовательное перемещение
+	entity.follow_path(path)
+	
+	return true
 
+
+# === ОТКАТ ПЕРЕМЕЩЕНИЯ ===
 func undo(level: Level) -> void:
+	# Возвращаем сущность на старую позицию
 	level.update_entity_position(target_pos, start_pos, entity)
-	entity.move_success(-direction)
+	entity.tile_position = start_pos
+	
+	# Мгновенно перемещаем
+	entity.global_position = level.tile_to_local(start_pos)

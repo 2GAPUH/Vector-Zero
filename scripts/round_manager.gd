@@ -1,38 +1,40 @@
 class_name RoundManager
 extends Node
 
+# === МЕНЕДЖЕР РАУНДОВ ===
+
 # Сигналы для оповещения о событиях
 signal round_started(round_number: int)
-signal turn_preparing(entity: Entity)      # Перед началом хода (камера перемещается)
-signal turn_started(entity: Entity)        # Ход начался
+signal turn_preparing(entity: Entity)
+signal turn_started(entity: Entity)
 signal turn_finished(entity: Entity)
 signal round_finished(round_number: int)
 
 # Задержка между ходами (в секундах)
 const TURN_DELAY: float = 0.5
 
-# Фиксированный порядок ходов (устанавливается один раз)
+# Порядок ходов
 var _turn_order: Array[Entity] = []
 var _turn_index: int = 0
 var _round_number: int = 0
 var _is_active: bool = false
 
-# Сущность, которая ходит сейчас
+# Текущая сущность
 var _current_entity: Entity = null
 
-# Флаг: ожидание подтверждения начала хода
+# Флаг ожидания подтверждения
 var _waiting_for_turn_confirm: bool = false
 
 
+# === ИНИЦИАЛИЗАЦИЯ ===
 func initialize(entities: Array[Entity]) -> void:
-	# Очищаем и перемешиваем
 	_turn_order.clear()
 	
-	# Копируем только действующие сущности
+	# Копируем только живые сущности
 	for entity: Entity in entities:
-		_turn_order.append(entity)
+		if entity.is_alive:
+			_turn_order.append(entity)
 	
-	# Перемешиваем порядок (случайно)
 	_shuffle_turn_order()
 	
 	_round_number = 0
@@ -40,8 +42,8 @@ func initialize(entities: Array[Entity]) -> void:
 	_is_active = false
 
 
+# === ПЕРЕМЕШАТЬ ПОРЯДОК ===
 func _shuffle_turn_order() -> void:
-	# Алгоритм Fisher-Yates для перемешивания
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	
@@ -52,38 +54,58 @@ func _shuffle_turn_order() -> void:
 		_turn_order[j] = temp
 
 
+# === НАЧАТЬ ИГРУ ===
 func start_game() -> void:
 	_is_active = true
 	_start_round()
 
 
+# === НАЧАТЬ РАУНД ===
 func _start_round() -> void:
 	_round_number += 1
 	_turn_index = 0
+	
+	# Обновляем порядок ходов (убираем мёртвых)
+	_remove_dead_entities()
 	
 	emit_signal("round_started", _round_number)
 	
 	_prepare_current_turn()
 
 
-# Подготовка хода (камера перемещается)
+# === УДАЛИТЬ МЁРТВЫХ СУЩНОСТЕЙ ИЗ ОЧЕРЕДИ ===
+func _remove_dead_entities() -> void:
+	var new_order: Array[Entity] = []
+	for entity: Entity in _turn_order:
+		if entity.is_alive:
+			new_order.append(entity)
+	_turn_order = new_order
+
+
+# === ПОДГОТОВКА ХОДА ===
 func _prepare_current_turn() -> void:
 	if not _is_active:
 		return
 	
+	# Проверяем: раунд закончился?
 	if _turn_index >= _turn_order.size():
-		# Раунд закончен
 		_on_round_finished()
 		return
 	
 	_current_entity = _turn_order[_turn_index]
+	
+	# Пропускаем неживых
+	if not _current_entity.is_alive:
+		_turn_index += 1
+		_prepare_current_turn()
+		return
+	
 	_waiting_for_turn_confirm = true
 	
-	# Уведомляем о подготовке хода (камера должна переместиться)
 	emit_signal("turn_preparing", _current_entity)
 
 
-# Подтверждение начала хода (вызывается после перемещения камеры)
+# === ПОДТВЕРДИТЬ НАЧАЛО ХОДА ===
 func confirm_turn_start() -> void:
 	if not _waiting_for_turn_confirm:
 		return
@@ -94,13 +116,13 @@ func confirm_turn_start() -> void:
 	if not _current_entity.is_connected("turn_finished", _on_entity_turn_finished):
 		_current_entity.connect("turn_finished", _on_entity_turn_finished)
 	
-	# Уведомляем о начале хода
 	emit_signal("turn_started", _current_entity)
 	
 	# Запускаем ход сущности
 	_current_entity._start_turn()
 
 
+# === ЗАВЕРШЕНИЕ ХОДА СУЩНОСТИ ===
 func _on_entity_turn_finished() -> void:
 	emit_signal("turn_finished", _current_entity)
 	_turn_index += 1
@@ -110,14 +132,13 @@ func _on_entity_turn_finished() -> void:
 	_prepare_current_turn()
 
 
+# === ЗАВЕРШЕНИЕ РАУНДА ===
 func _on_round_finished() -> void:
 	emit_signal("round_finished", _round_number)
-	
-	# Начинаем новый раунд
 	call_deferred("_start_round")
 
 
-# Перезапуск текущего раунда (для отката)
+# === ПЕРЕЗАПУСК ТЕКУЩЕГО РАУНДА ===
 func restart_current_round() -> void:
 	_turn_index = 0
 	_waiting_for_turn_confirm = false
@@ -125,23 +146,28 @@ func restart_current_round() -> void:
 	_prepare_current_turn()
 
 
-# Начать предыдущий раунд (для глобального отката)
+# === НАЧАТЬ ПРЕДЫДУЩИЙ РАУНД ===
 func start_previous_round() -> void:
 	_round_number -= 1
+	if _round_number < 1:
+		_round_number = 1
 	_turn_index = 0
 	_waiting_for_turn_confirm = false
 	emit_signal("round_started", _round_number)
 	_prepare_current_turn()
 
 
+# === ПАУЗА ===
 func pause() -> void:
 	_is_active = false
 
 
+# === ПРОДОЛЖИТЬ ===
 func resume() -> void:
 	_is_active = true
 
 
+# === ГЕТТЕРЫ ===
 func get_current_entity() -> Entity:
 	return _current_entity
 

@@ -1,0 +1,51 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/abilities_panel.gd" id="1_panel"]
+
+[node name="AbilitiesPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("1_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="StatsContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HpLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+text = "HP: 2/2"
+
+[node name="ApLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+text = "AP: 1/1"
+
+[node name="MoveLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+text = "Перемещение: 2"
+
+[node name="AbilitiesContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EndTurnButton" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Завершить ход [Space]"
