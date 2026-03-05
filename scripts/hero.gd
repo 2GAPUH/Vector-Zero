@@ -1,94 +1,152 @@
 extends Entity
 class_name Hero
 
-# Флаг: сейчас ход героя
-var _is_my_turn: bool = false
+# === КОНСТАНТЫ ===
+const MOVE_RANGE: int = 2
+const DASH_RANGE: int = 6
+const ATTACK_RANGE: int = 1
+
+# === ПЕРЕМЕННЫЕ ===
+# Выбранная способность для использования
+var _selected_ability: Ability = null
 
 
 func _ready() -> void:
-	speed = 10
+	super._ready()
+	_initialize_abilities()
+
+
+# Инициализация способностей героя
+func _initialize_abilities() -> void:
+	# Базовое перемещение (бесплатное)
+	var move_ability: MoveAbility = MoveAbility.new()
+	move_ability.ability_name = "Перемещение"
+	move_ability.ap_cost = 0
+	move_ability.range = MOVE_RANGE
+	add_ability(move_ability)
+	
+	# Рывок (стоит 1 AP)
+	var dash_ability: DashAbility = DashAbility.new()
+	dash_ability.ability_name = "Рывок"
+	dash_ability.ap_cost = 1
+	dash_ability.range = DASH_RANGE
+	add_ability(dash_ability)
+	
+	# Атака (стоит 1 AP)
+	var attack_ability: AttackAbility = AttackAbility.new()
+	attack_ability.ability_name = "Атака"
+	attack_ability.ap_cost = 1
+	attack_ability.range = ATTACK_RANGE
+	attack_ability.damage = base_damage
+	add_ability(attack_ability)
 
 
 # Начать ход героя
 func _start_turn() -> void:
-	_is_my_turn = true
+	super._start_turn()
+	_selected_ability = null
+	print("Ход героя начался. AP: ", current_ap)
 
 
 # Обработка ввода
 func _unhandled_input(event: InputEvent) -> void:
-	if not _is_my_turn:
+	if not is_my_turn:
 		return
 	
-	_handle_keyboard_input(event)
-	_handle_mouse_input(event)
+	# Обработка клавиатуры
+	if event is InputEventKey:
+		if event.is_pressed() and not event.is_echo():
+			_handle_keyboard_input(event)
+		return
+	
+	# Обработка клика мыши
+	if event is InputEventMouseButton:
+		if event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT:
+			_handle_left_click(event)
+		elif event.is_pressed() and event.button_index == MOUSE_BUTTON_RIGHT:
+			_handle_right_click(event)
 
 
 # Обработка клавиатуры
-func _handle_keyboard_input(event: InputEvent) -> void:
-	if not event is InputEventKey:
-		return
-	
-	if not event.is_pressed() or event.is_echo():
-		return
-	
-	var dir: Vector2i = Vector2i.ZERO
-	
-	if event.is_action_pressed("move_up"):
-		dir.y -= 1
-	elif event.is_action_pressed("move_down"):
-		dir.y += 1
-	elif event.is_action_pressed("move_left"):
-		dir.x -= 1
-	elif event.is_action_pressed("move_right"):
-		dir.x += 1
-	
-	if dir != Vector2i.ZERO:
-		_execute_move(dir)
+func _handle_keyboard_input(event: InputEventKey) -> void:
+	# Space - завершить ход
+	if event.keycode == KEY_SPACE:
+		end_turn()
+		get_viewport().set_input_as_handled()
 
 
-# Обработка мыши
-func _handle_mouse_input(event: InputEvent) -> void:
-	if not event is InputEventMouseButton:
-		return
+# Обработка левого клика
+func _handle_left_click(event: InputEventMouseButton) -> void:
+	var click_pos: Vector2i = current_level.local_to_tile(event.position)
 	
-	if not event.is_pressed():
-		return
-	
-	if event.button_index == MOUSE_BUTTON_LEFT:
-		var click_pos: Vector2i = current_level.local_to_tile(event.position)
-		var direction: Vector2i = click_pos - tile_position
-		
-		# Нормализуем направление (один шаг)
-		var move_dir: Vector2i = _normalize_direction(direction)
-		
-		if move_dir != Vector2i.ZERO:
-			_execute_move(move_dir)
-
-
-# Нормализовать направление до одного шага
-func _normalize_direction(dir: Vector2i) -> Vector2i:
-	var result: Vector2i = Vector2i.ZERO
-	
-	if abs(dir.x) >= abs(dir.y):
-		result.x = sign(dir.x)
+	# Если выбрана способность - пытаемся использовать
+	if _selected_ability != null:
+		_try_use_ability(_selected_ability, click_pos)
 	else:
-		result.y = sign(dir.y)
+		# Если способность не выбрана, пытаемся переместиться по умолчанию
+		var move_ability: Ability = get_ability_by_name("Перемещение")
+		if move_ability != null and move_ability.can_use(self, current_level):
+			_try_use_ability(move_ability, click_pos)
+
+
+# Обработка правого клика (отмена выбора способности)
+func _handle_right_click(_event: InputEventMouseButton) -> void:
+	_selected_ability = null
+
+
+# Выбрать способность для использования
+func select_ability(ability_name: String) -> bool:
+	var ability: Ability = get_ability_by_name(ability_name)
+	if ability == null:
+		return false
 	
+	if not ability.can_use(self, current_level):
+		return false
+	
+	_selected_ability = ability
+	return true
+
+
+# Попытаться использовать способность
+func _try_use_ability(ability: Ability, target_pos: Vector2i) -> void:
+	# Проверяем, что цель валидна
+	var valid_targets: Array[Vector2i] = ability.get_valid_targets(self, current_level)
+	
+	if not valid_targets.has(target_pos):
+		print("Невалидная цель")
+		return
+	
+	# Создаём действие через способность
+	var action: Action = ability.create_action(self, target_pos, current_level)
+	
+	if action == null:
+		print("Не удалось создать действие")
+		return
+	
+	# Отправляем действие на выполнение
+	emit_signal("request_action", action)
+	
+	# Сбрасываем выбранную способность
+	_selected_ability = null
+
+
+# Получить валидные цели для текущей выбранной способности
+func get_valid_targets_for_selected() -> Array[Vector2i]:
+	if _selected_ability == null:
+		return []
+	return _selected_ability.get_valid_targets(self, current_level)
+
+
+# Получить все способности, которые можно использовать сейчас
+func get_available_abilities() -> Array[Ability]:
+	var result: Array[Ability] = []
+	for ability: Ability in abilities:
+		if ability.can_use(self, current_level):
+			result.append(ability)
 	return result
 
 
-# Выполнить перемещение (ход НЕ завершается автоматически)
-func _execute_move(direction: Vector2i) -> void:
-	var action: MoveAction = MoveAction.new(self, direction)
-	emit_signal("request_action", action)
+# === ИНФОРМАЦИЯ ===
 
-
-# Завершить ход (вызывается по кнопке)
-func end_turn() -> void:
-	_is_my_turn = false
-	emit_signal("turn_finished")
-
-
-# Проверить, сейчас ли ход этого героя
-func is_my_turn() -> bool:
-	return _is_my_turn
+func get_display_name() -> String:
+	return "Герой"

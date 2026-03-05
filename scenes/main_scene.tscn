@@ -30,7 +30,7 @@ position = Vector2(-24, 72)
 [node name="Enemy2" parent="." unique_id=1910369301 instance=ExtResource("3_7ykc4")]
 position = Vector2(56, -40)
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1135251720]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=113251720]
 
 [node name="GameUI" type="Control" parent="CanvasLayer" unique_id=1243541399]
 layout_mode = 3
@@ -70,7 +70,11 @@ label_settings = SubResource("LabelSettings_18nlu")
 layout_mode = 2
 alignment = 1
 
-[node name="MessageContainer" type="Control" parent="CanvasLayer/GameUI/VBoxContainer" unique_id=1592574034]
+[node name="AbilityContainer" type="HBoxContainer" parent="CanvasLayer/GameUI/VBoxContainer" unique_id=1621863972]
+layout_mode = 2
+alignment = 1
+
+[node name="MessageContainer" type="Control" parent="CanvasLayer/GameUI/VBoxContainer" unique_id=159253434]
 layout_mode = 2
 
 [node name="MessageLabel" type="Label" parent="CanvasLayer/GameUI/VBoxContainer/MessageContainer" unique_id=452918371]
@@ -85,7 +89,7 @@ alignment = 1
 
 [node name="EndTurnButton" type="Button" parent="CanvasLayer/GameUI/VBoxContainer/ButtonContainer" unique_id=316007892]
 layout_mode = 2
-text = "Завершить ход"
+text = "Завершить ход (Space)"
 
 [node name="UndoLocalButton" type="Button" parent="CanvasLayer/GameUI/VBoxContainer/ButtonContainer" unique_id=105059053]
 layout_mode = 2
