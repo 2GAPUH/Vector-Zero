@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://cdsh88kav2lkf"]
+
+[ext_resource type="Script" uid="uid://berka3rgnmi0d" path="res://scripts/obstacle.gd" id="1_obstacle"]
+[ext_resource type="Texture2D" uid="uid://bnmyia3lvh1ec" path="res://resources/momonga_Dungeon.png" id="2_5t5to"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_corpse"]
+size = Vector2(16, 16)
+
+[node name="Corpse" type="Area2D" unique_id=1106088339]
+script = ExtResource("1_obstacle")
+is_corpse = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=616363730]
+shape = SubResource("RectangleShape2D_corpse")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1010556836]
+modulate = Color(0.6, 0.4, 0.4, 1)
+position = Vector2(0, -3)
+texture = ExtResource("2_5t5to")
+region_enabled = true
+region_rect = Rect2(208, 201, 16, 22)

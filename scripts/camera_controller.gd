@@ -3,7 +3,7 @@ class_name CameraController
 
 # === КОНСТАНТЫ ===
 const MOVE_DURATION: float = 0.4
-const FOLLOW_SPEED: float = 8.0
+const FOLLOW_SMOOTHING: float = 10.0
 
 # === ПАРАМЕТРЫ ===
 # Зум камеры
@@ -11,9 +11,6 @@ const FOLLOW_SPEED: float = 8.0
 
 # Сущность для слежения
 var target_entity: Entity = null
-
-# Режим слежения
-var follow_enabled: bool = true
 
 # === ВНУТРЕННИЕ ПЕРЕМЕННЫЕ ===
 var _is_dragging: bool = false
@@ -34,23 +31,16 @@ func _process(delta: float) -> void:
 
 # === СЛЕЖЕНИЕ ЗА СУЩНОСТЬЮ ===
 
-func _update_follow(delta: float) -> void:
-	if not follow_enabled:
-		return
-	
+func _update_follow(_delta: float) -> void:
 	if target_entity == null:
 		return
 	
 	if _is_dragging:
 		return
 	
-	# Плавное следование за сущностью
-	var target_pos: Vector2 = target_entity.global_position
-	var current_pos: Vector2 = global_position
-	
-	# Интерполяция для плавного движения
-	var new_pos: Vector2 = current_pos.lerp(target_pos, FOLLOW_SPEED * delta)
-	global_position = new_pos
+	# Просто следуем за позицией сущности (плавно)
+	# Это работает вместе с tween анимацией сущности
+	global_position = target_entity.global_position
 
 
 # Установить цель для слежения

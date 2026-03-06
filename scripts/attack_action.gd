@@ -25,17 +25,19 @@ func _init(actor: Entity, target_entity: Entity, dmg: int) -> void:
 # Выполнить атаку
 func execute(level: Level) -> bool:
 	if target == null or not target.is_alive:
+		print("AttackAction: цель null или мертва")
 		return false
 	
 	# Проверяем дистанцию
 	var distance: int = abs(entity.tile_position.x - target.tile_position.x) + abs(entity.tile_position.y - target.tile_position.y)
 	if distance != 1:
+		print("AttackAction: неверная дистанция: ", distance)
 		return false
+	
+	print(entity.get_display_name(), " атакует ", target.get_display_name(), " на ", damage, " урона")
 	
 	# Наносим урон
 	target.take_damage(damage)
-	
-	print(entity.get_display_name(), " атакует ", target.get_display_name(), " на ", damage, " урона")
 	
 	# Если цель умерла
 	if not target.is_alive:
@@ -48,17 +50,22 @@ func execute(level: Level) -> bool:
 func _handle_target_death(level: Level) -> void:
 	print(target.get_display_name(), " погибает!")
 	
-	# Создаём труп
-	var corpse: Obstacle = Obstacle.create_corpse(target)
+	# Создаём труп из сцены
+	var corpse: Obstacle = Obstacle.create_corpse_instance(target)
+	
+	if corpse == null:
+		print("Не удалось создать труп")
+		return
 	
 	# Удаляем сущность с уровня
 	level.unregister_entity(target)
 	
-	# Регистрируем труп
+	# Регистрируем труп на уровне
 	level.register_entity_at_position(corpse, target_tile_pos)
 	
 	# Добавляем труп на сцену
-	entity.get_tree().current_scene.add_child(corpse)
+	var main_scene: Node = entity.get_tree().current_scene
+	main_scene.add_child(corpse)
 	corpse.position = level.tile_to_local(target_tile_pos)
 	
 	# Удаляем саму сущность
