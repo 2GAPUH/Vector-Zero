@@ -9,6 +9,9 @@ var _occupied: Dictionary = {}
 # Ссылка на менеджер истории
 var history_manager: HistoryManager = null
 
+# Сигнал о завершении действия (для обновления UI)
+signal action_completed
+
 
 func _ready() -> void:
 	GameManager.set_level(self)
@@ -154,6 +157,9 @@ func _on_entity_request_action(action: Action) -> void:
 	# Записываем в историю только успешные действия
 	if success and history_manager != null:
 		history_manager.record_action(action.entity, action)
+	
+	# Отправляем сигнал о завершении действия
+	emit_signal("action_completed")
 
 
 # Обработчик смерти сущности

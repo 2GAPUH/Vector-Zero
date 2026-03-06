@@ -2,7 +2,7 @@ extends Node2D
 class_name HighlightLayer
 
 # Цвет подсветки перемещения
-var move_color: Color = Color(0.2, 0.6, 1.0, 0.4)
+var move_color: Color = Color(0.2, 1.0, 0.2, 0.4)
 
 # Цвет подсветки атаки
 var attack_color: Color = Color(1.0, 0.3, 0.3, 0.4)

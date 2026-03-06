@@ -7,6 +7,10 @@ signal request_action(action: Action)
 signal died(entity: Entity)
 signal hp_changed(entity: Entity, old_hp: int, new_hp: int)
 signal ap_changed(entity: Entity, old_ap: int, new_ap: int)
+signal move_budget_changed(entity: Entity, old_budget: int, new_budget: int)
+
+# === КОНСТАНТЫ ===
+const BASE_MOVE_BUDGET: int = 2
 
 # === ПАРАМЕТРЫ ===
 # Позиция на сетке
@@ -41,10 +45,16 @@ var abilities: Array[Ability] = []
 # Флаг: сейчас ход этой сущности
 var _is_my_turn: bool = false
 
+# Запас движения (в клетках) - для всех сущностей
+var move_budget: int = BASE_MOVE_BUDGET
+var max_move_budget: int = BASE_MOVE_BUDGET
+
 
 func _ready() -> void:
 	hp = max_hp
 	current_ap = max_ap
+	move_budget = BASE_MOVE_BUDGET
+	max_move_budget = BASE_MOVE_BUDGET
 
 
 # === УПРАВЛЕНИЕ ХОДОМ ===
@@ -57,6 +67,7 @@ func _start_turn() -> void:
 	
 	_is_my_turn = true
 	_reset_ap()
+	_reset_move_budget()
 
 
 # Завершить ход
@@ -93,6 +104,38 @@ func spend_ap(amount: int) -> bool:
 # Проверить, достаточно ли AP
 func has_ap(amount: int) -> bool:
 	return current_ap >= amount
+
+
+# === ЗАПАС ДВИЖЕНИЯ ===
+
+# Сбросить запас движения в начале хода
+func _reset_move_budget() -> void:
+	move_budget = BASE_MOVE_BUDGET
+	max_move_budget = BASE_MOVE_BUDGET
+
+
+# Использовать запас движения
+func use_move_budget(amount: int) -> bool:
+	if move_budget < amount:
+		return false
+	var old_budget: int = move_budget
+	move_budget -= amount
+	emit_signal("move_budget_changed", self, old_budget, move_budget)
+	return true
+
+
+# Применить рывок (утраивает МАКСИМАЛЬНЫЙ запас движения)
+func apply_dash_boost() -> void:
+	# Вычисляем сколько клеток уже потрачено
+	var spent: int = max_move_budget - move_budget
+	
+	# Утраиваем МАКСИМАЛЬНЫЙ запас
+	max_move_budget *= 3
+	
+	# Новый текущий = максимальный - потраченное
+	move_budget = max_move_budget - spent
+	
+	print("Рывок применён! Запас: ", move_budget, "/", max_move_budget)
 
 
 # === ЗДОРОВЬЕ ===

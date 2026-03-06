@@ -29,8 +29,8 @@ var target_type: TargetType = TargetType.TILE
 
 # === МЕТОДЫ ===
 
-# Проверить, можно ли использовать способность
-func can_use(entity: Entity, level: Level) -> bool:
+# Проверить, можно ли использовать способность (базовая проверка - только AP)
+func can_use(entity: Entity, _level: Level) -> bool:
 	# Базовая проверка: достаточно ли AP
 	if not entity.has_ap(ap_cost):
 		return false
@@ -40,6 +40,11 @@ func can_use(entity: Entity, level: Level) -> bool:
 		return false
 	
 	return true
+
+
+# Проверить, есть ли валидные цели для способности
+func has_valid_targets(entity: Entity, level: Level) -> bool:
+	return not get_valid_targets(entity, level).is_empty()
 
 
 # Получить список валидных целей

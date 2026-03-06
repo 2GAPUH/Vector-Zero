@@ -1,59 +1,44 @@
 class_name DashAbility
 extends Ability
 
-# Путь для рывка
-var last_path: Array[Vector2i] = []
-
 
 func _init() -> void:
 	ability_name = "Рывок"
-	description = "Быстрый рывок на большое расстояние"
+	description = "Утроить максимальный запас движения. Мгновенное применение."
 	ap_cost = 1
-	range = 6
-	target_type = TargetType.TILE
+	range = 0
+	target_type = TargetType.NONE
 
 
-# Получить валидные цели
-func get_valid_targets(entity: Entity, level: Level) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	var start_pos: Vector2i = entity.tile_position
-	
-	# Используем A* для поиска достижимых клеток
-	result = Pathfinder.get_reachable_tiles(start_pos, level, range)
-	
-	# Убираем текущую позицию
-	result.erase(start_pos)
-	
-	return result
+# Рывок не требует выбора цели
+func get_valid_targets(_entity: Entity, _level: Level) -> Array[Vector2i]:
+	return []
 
 
-# Создать действие рывка
-func create_action(entity: Entity, target: Variant, level: Level) -> Action:
-	if not target is Vector2i:
-		return null
+# Проверить, можно ли использовать способность
+func can_use(entity: Entity, _level: Level) -> bool:
+	# Базовая проверка AP
+	if not entity.has_ap(ap_cost):
+		return false
 	
-	var target_pos: Vector2i = target as Vector2i
+	# Только живые сущности
+	if not entity.is_alive:
+		return false
 	
-	# Проверяем валидность цели
-	var valid_targets: Array[Vector2i] = get_valid_targets(entity, level)
-	if not valid_targets.has(target_pos):
-		return null
-	
-	# Проверяем AP
+	return true
+
+
+# Создать действие рывка (мгновенное, без цели)
+func create_action(entity: Entity, _target: Variant, _level: Level) -> Action:
 	if not entity.has_ap(ap_cost):
 		return null
-	
-	# Находим путь
-	var path: Array[Vector2i] = Pathfinder.find_path(entity.tile_position, target_pos, level)
-	
-	if path.is_empty():
-		return null
-	
-	# Сохраняем путь
-	last_path = path
 	
 	# Тратим AP
 	entity.spend_ap(ap_cost)
 	
-	# Создаём действие перемещения
-	return MoveAction.new(entity, path)
+	# Применяем эффект рывка - утраиваем МАКСИМАЛЬНЫЙ запас движения
+	entity.apply_dash_boost()
+	
+	# Создаём действие рывка (пустое, только для записи в историю)
+	var action: DashAction = DashAction.new(entity)
+	return action

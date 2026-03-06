@@ -27,26 +27,35 @@ func get_next_action() -> Action:
 	
 	# 2. Проверяем: герой рядом? -> Атака
 	if _is_adjacent(my_pos, target_hero.tile_position):
-		return _create_attack_action(level, target_hero.tile_position)
+		var attack_action: Action = _create_attack_action(level, target_hero.tile_position)
+		if attack_action != null:
+			return attack_action
 	
 	# 3. Проверяем: есть ли препятствие на пути? -> Атака препятствия
 	var obstacle_action: Action = _check_and_attack_obstacle(level, my_pos, target_hero.tile_position)
 	if obstacle_action != null:
 		return obstacle_action
 	
-	# 4. Рассчитываем расстояние до героя
+	# 4. Проверяем запас движения
+	if entity.move_budget <= 0:
+		# Нет запаса движения - можно использовать рывок если есть AP
+		if entity.has_ap(1):
+			var dash_action: Action = _create_dash_action(level)
+			if dash_action != null:
+				return dash_action
+		return null
+	
+	# 5. Рассчитываем расстояние до героя
 	var distance: int = _manhattan_distance(my_pos, target_hero.tile_position)
 	
-	# 5. Выбираем способ перемещения
-	if distance <= 2:
-		# Близко - обычное перемещение
-		return _create_move_action(level, target_hero.tile_position, 2)
-	elif distance <= 6 and entity.has_ap(1):
-		# Далеко и есть AP - рывок
-		return _create_dash_action(level, target_hero.tile_position)
-	else:
-		# Иначе обычное перемещение
-		return _create_move_action(level, target_hero.tile_position, 2)
+	# 6. Если далеко и есть AP - используем рывок для увеличения запаса движения
+	if distance > entity.move_budget and entity.has_ap(1):
+		var dash_action: Action = _create_dash_action(level)
+		if dash_action != null:
+			return dash_action
+	
+	# 7. Обычное перемещение
+	return _create_move_action(level, target_hero.tile_position)
 
 
 # Проверить, есть ли препятствие на пути к цели
@@ -80,12 +89,12 @@ func _create_attack_action(level: Level, target_pos: Vector2i) -> Action:
 
 
 # Создать действие перемещения
-func _create_move_action(level: Level, target_pos: Vector2i, _max_range: int) -> Action:
+func _create_move_action(level: Level, target_pos: Vector2i) -> Action:
 	var move_ability: MoveAbility = entity.get_ability_by_name("Перемещение") as MoveAbility
 	if move_ability == null:
 		return null
 	
-	# Получаем валидные цели
+	# Получаем валидные цели (учитывает текущий move_budget)
 	var valid_targets: Array[Vector2i] = move_ability.get_valid_targets(entity, level)
 	
 	if valid_targets.is_empty():
@@ -97,8 +106,8 @@ func _create_move_action(level: Level, target_pos: Vector2i, _max_range: int) ->
 	return move_ability.create_action(entity, best_target, level)
 
 
-# Создать действие рывка
-func _create_dash_action(level: Level, target_pos: Vector2i) -> Action:
+# Создать действие рывка (мгновенное, утраивает запас движения)
+func _create_dash_action(_level: Level) -> Action:
 	var dash_ability: DashAbility = entity.get_ability_by_name("Рывок") as DashAbility
 	if dash_ability == null:
 		return null
@@ -106,16 +115,8 @@ func _create_dash_action(level: Level, target_pos: Vector2i) -> Action:
 	if not entity.has_ap(dash_ability.ap_cost):
 		return null
 	
-	# Получаем валидные цели
-	var valid_targets: Array[Vector2i] = dash_ability.get_valid_targets(entity, level)
-	
-	if valid_targets.is_empty():
-		return null
-	
-	# Находим ближайшую к цели точку из доступных
-	var best_target: Vector2i = _find_best_approach_target(valid_targets, target_pos)
-	
-	return dash_ability.create_action(entity, best_target, level)
+	# Рывок не требует цели - применяется мгновенно
+	return dash_ability.create_action(entity, null, null)
 
 
 # Найти лучшую точку приближения к цели

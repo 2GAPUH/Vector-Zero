@@ -66,6 +66,11 @@ layout_mode = 2
 text = "Ход: Ожидание..."
 label_settings = SubResource("LabelSettings_18nlu")
 
+[node name="MoveBudgetLabel" type="Label" parent="CanvasLayer/GameUI/VBoxContainer/InfoContainer" unique_id=1086599989]
+layout_mode = 2
+text = "Движение: 2/2"
+label_settings = SubResource("LabelSettings_18nlu")
+
 [node name="TurnOrderContainer" type="HBoxContainer" parent="CanvasLayer/GameUI/VBoxContainer" unique_id=1621863971]
 layout_mode = 2
 alignment = 1

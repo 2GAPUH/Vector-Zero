@@ -2,7 +2,7 @@ class_name MoveAction
 extends Action
 
 # Скорость анимации перемещения (секунды на клетку)
-const MOVE_SPEED: float = 0.25
+const MOVE_SPEED: float = 0.15
 
 # Путь для перемещения (все клетки пути)
 var path: Array[Vector2i] = []
@@ -13,6 +13,12 @@ var start_pos: Vector2i = Vector2i.ZERO
 # Конечная позиция
 var end_pos: Vector2i = Vector2i.ZERO
 
+# Длина пути (для вычитания из move_budget)
+var path_length: int = 0
+
+# Сигнал о завершении анимации
+signal animation_finished
+
 
 # Конструктор с путём
 func _init(actor: Entity, move_path: Array[Vector2i]) -> void:
@@ -21,6 +27,7 @@ func _init(actor: Entity, move_path: Array[Vector2i]) -> void:
 	if path.size() > 0:
 		start_pos = actor.tile_position
 		end_pos = path[path.size() - 1]
+		path_length = path.size()
 
 
 # Выполнить перемещение по пути
@@ -43,28 +50,44 @@ func execute(level: Level) -> bool:
 		entity.move_fail()
 		return false
 	
-	print("MoveAction: перемещение от ", start_pos, " к ", end_pos)
+	# Списываем запас движения
+	if not entity.use_move_budget(path_length):
+		print("MoveAction: недостаточно запаса движения")
+		return false
+	
+	print("MoveAction: перемещение от ", start_pos, " к ", end_pos, " (длина: ", path_length, ")")
 	
 	# Обновляем позицию на карте
 	level.update_entity_position(start_pos, end_pos, entity)
 	
-	# Запускаем анимацию (без await - камера будет следить)
-	_start_movement_animation()
+	# Запускаем пошаговую анимацию
+	_start_step_by_step_animation()
 	
 	return true
 
 
-# Запустить анимацию перемещения
-func _start_movement_animation() -> void:
+# Запустить пошаговую анимацию перемещения
+func _start_step_by_step_animation() -> void:
 	# Обновляем tile_position сразу
 	entity.tile_position = end_pos
 	
-	# Создаём tween для плавного движения к конечной точке
-	var world_pos: Vector2 = entity.current_level.tile_to_local(end_pos)
-	var total_time: float = MOVE_SPEED * path.size()
-	
+	# Создаём последовательный tween для каждой клетки пути
 	var tween: Tween = entity.create_tween()
-	tween.tween_property(entity, "global_position", world_pos, total_time).set_trans(Tween.TRANS_SINE)
+	
+	for i: int in range(path.size()):
+		var cell: Vector2i = path[i]
+		var world_pos: Vector2 = entity.current_level.tile_to_local(cell)
+		
+		# Добавляем шаг анимации для каждой клетки
+		tween.tween_property(entity, "global_position", world_pos, MOVE_SPEED).set_trans(Tween.TRANS_SINE)
+	
+	# После завершения анимации отправляем сигнал
+	tween.tween_callback(_on_animation_finished)
+
+
+# Called when animation finishes
+func _on_animation_finished() -> void:
+	emit_signal("animation_finished")
 
 
 # Отменить перемещение
@@ -72,3 +95,6 @@ func undo(level: Level) -> void:
 	level.update_entity_position(end_pos, start_pos, entity)
 	entity.tile_position = start_pos
 	entity.global_position = level.tile_to_local(start_pos)
+	
+	# Возвращаем запас движения
+	entity.move_budget += path_length

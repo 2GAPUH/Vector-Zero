@@ -19,6 +19,10 @@ func _init() -> void:
 	target_type = TargetType.DIRECTION
 
 
+# can_use проверяет только AP (наследуется от Ability)
+# Наличие целей проверяется через has_valid_targets
+
+
 # Получить валидные цели (соседние клетки с врагами или препятствиями)
 func get_valid_targets(entity: Entity, level: Level) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []

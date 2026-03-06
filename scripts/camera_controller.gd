@@ -12,9 +12,12 @@ const FOLLOW_SMOOTHING: float = 10.0
 # Сущность для слежения
 var target_entity: Entity = null
 
+# Флаг включения слежения (отключается во время хода героя)
+var follow_enabled: bool = true
+
 # === ВНУТРЕННИЕ ПЕРЕМЕННЫЕ ===
 var _is_dragging: bool = false
-var _drag_start_pos: Vector2 = Vector2.ZERO
+var _drag_start_screen_pos: Vector2 = Vector2.ZERO
 var _drag_camera_start_pos: Vector2 = Vector2.ZERO
 var _move_tween: Tween = null
 
@@ -38,6 +41,10 @@ func _update_follow(_delta: float) -> void:
 	if _is_dragging:
 		return
 	
+	# Если слежение отключено - не следуем за целью
+	if not follow_enabled:
+		return
+	
 	# Просто следуем за позицией сущности (плавно)
 	# Это работает вместе с tween анимацией сущности
 	global_position = target_entity.global_position
@@ -51,6 +58,11 @@ func set_target(entity: Entity) -> void:
 # Остановить слежение
 func clear_target() -> void:
 	target_entity = null
+
+
+# Включить/выключить слежение
+func set_follow_enabled(enabled: bool) -> void:
+	follow_enabled = enabled
 
 
 # === ПЕРЕТАСКИВАНИЕ ===
@@ -68,7 +80,8 @@ func _handle_drag() -> void:
 
 func _start_drag() -> void:
 	_is_dragging = true
-	_drag_start_pos = get_global_mouse_position()
+	# Используем экранные координаты (не зависят от позиции камеры)
+	_drag_start_screen_pos = get_viewport().get_mouse_position()
 	_drag_camera_start_pos = global_position
 	
 	# Отменяем текущую анимацию
@@ -81,9 +94,14 @@ func _end_drag() -> void:
 
 
 func _update_drag() -> void:
-	var current_mouse_pos: Vector2 = get_global_mouse_position()
-	var delta: Vector2 = _drag_start_pos - current_mouse_pos
-	global_position = _drag_camera_start_pos + delta
+	# Используем экранные координаты и масштабируем с учётом зума
+	var current_screen_pos: Vector2 = get_viewport().get_mouse_position()
+	var screen_delta: Vector2 = _drag_start_screen_pos - current_screen_pos
+	
+	# Масштабируем дельту с учётом зума камеры
+	var world_delta: Vector2 = screen_delta / zoom
+	
+	global_position = _drag_camera_start_pos + world_delta
 
 
 # === ПРОВЕРКА ВИДИМОСТИ ===

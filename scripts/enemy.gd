@@ -2,8 +2,6 @@ extends Entity
 class_name Enemy
 
 # === КОНСТАНТЫ ===
-const MOVE_RANGE: int = 2
-const DASH_RANGE: int = 6
 const ATTACK_RANGE: int = 1
 
 
@@ -20,14 +18,14 @@ func _initialize_abilities() -> void:
 	var move_ability: MoveAbility = MoveAbility.new()
 	move_ability.ability_name = "Перемещение"
 	move_ability.ap_cost = 0
-	move_ability.range = MOVE_RANGE
+	move_ability.range = BASE_MOVE_BUDGET
 	add_ability(move_ability)
 	
-	# Рывок (стоит 1 AP)
+	# Рывок (стоит 1 AP) - утраивает максимальный запас движения
 	var dash_ability: DashAbility = DashAbility.new()
 	dash_ability.ability_name = "Рывок"
 	dash_ability.ap_cost = 1
-	dash_ability.range = DASH_RANGE
+	dash_ability.range = 0  # Рывок не требует выбора цели
 	add_ability(dash_ability)
 	
 	# Атака (стоит 1 AP)
@@ -43,6 +41,8 @@ func _initialize_abilities() -> void:
 func _start_turn() -> void:
 	super._start_turn()
 	
+	print("Ход врага начался. AP: ", current_ap, " Move Budget: ", move_budget, "/", max_move_budget)
+	
 	if controller == null:
 		emit_signal("turn_finished")
 		return
@@ -53,8 +53,8 @@ func _start_turn() -> void:
 
 # Выполнить ход AI
 func _execute_ai_turn() -> void:
-	# AI может выполнять несколько действий, пока есть AP
-	while current_ap > 0:
+	# AI может выполнять несколько действий, пока есть AP или запас движения
+	while current_ap > 0 or move_budget > 0:
 		var action: Action = controller.get_next_action()
 		
 		if action == null:
@@ -62,8 +62,8 @@ func _execute_ai_turn() -> void:
 		
 		emit_signal("request_action", action)
 		
-		# Небольшая задержка между действиями
-		await get_tree().create_timer(0.3).timeout
+		# Задержка между действиями (достаточная для анимации)
+		await get_tree().create_timer(0.5).timeout
 	
 	# Завершаем ход
 	emit_signal("turn_finished")

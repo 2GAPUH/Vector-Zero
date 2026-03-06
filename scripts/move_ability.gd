@@ -13,13 +13,36 @@ func _init() -> void:
 	target_type = TargetType.TILE
 
 
+# can_use проверяет только AP + есть ли запас движения
+func can_use(entity: Entity, _level: Level) -> bool:
+	# Базовая проверка AP
+	if not entity.has_ap(ap_cost):
+		return false
+	
+	# Проверка: жива ли сущность
+	if not entity.is_alive:
+		return false
+	
+	# Проверяем запас движения
+	if entity.move_budget <= 0:
+		return false
+	
+	return true
+
+
 # Получить валидные цели (клетки, куда можно переместиться)
 func get_valid_targets(entity: Entity, level: Level) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 	var start_pos: Vector2i = entity.tile_position
 	
+	# Используем текущий запас движения как дальность
+	var move_range: int = entity.move_budget
+	
+	if move_range <= 0:
+		return result
+	
 	# Получаем все достижимые клетки через A*
-	result = Pathfinder.get_reachable_tiles(start_pos, level, range)
+	result = Pathfinder.get_reachable_tiles(start_pos, level, move_range)
 	
 	# Убираем текущую позицию
 	result.erase(start_pos)
@@ -43,6 +66,11 @@ func create_action(entity: Entity, target: Variant, level: Level) -> Action:
 	var path: Array[Vector2i] = Pathfinder.find_path(entity.tile_position, target_pos, level)
 	
 	if path.is_empty():
+		return null
+	
+	# Проверяем запас движения
+	if entity.move_budget < path.size():
+		print("Недостаточно запаса движения: нужно ", path.size(), ", есть ", entity.move_budget)
 		return null
 	
 	# Сохраняем путь

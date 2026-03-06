@@ -10,6 +10,7 @@ signal undo_full_round_requested
 # === ССЫЛКИ НА ЭЛЕМЕНТЫ UI ===
 @onready var round_label: Label = $VBoxContainer/InfoContainer/RoundLabel
 @onready var turn_label: Label = $VBoxContainer/InfoContainer/TurnLabel
+@onready var move_budget_label: Label = $VBoxContainer/InfoContainer/MoveBudgetLabel
 @onready var turn_order_container: HBoxContainer = $VBoxContainer/TurnOrderContainer
 @onready var message_label: Label = $VBoxContainer/MessageContainer/MessageLabel
 @onready var ability_container: HBoxContainer = $VBoxContainer/AbilityContainer
@@ -72,24 +73,63 @@ func update_turn_text(entity: Entity) -> void:
 	turn_label.text = "Ход: " + entity.get_display_name()
 
 
+func update_move_budget(current: int, max_budget: int) -> void:
+	if move_budget_label != null:
+		move_budget_label.text = "Движение: " + str(current) + "/" + str(max_budget)
+		move_budget_label.visible = true
+
+
+func hide_move_budget() -> void:
+	if move_budget_label != null:
+		move_budget_label.visible = false
+
+
 # === СПОСОБНОСТИ ===
 
-func update_abilities(abilities: Array[Ability]) -> void:
+# Обновить UI способностей - показываем ВСЕ способности, disabled если недоступны
+func update_abilities(hero: Hero) -> void:
 	_clear_ability_buttons()
 	
-	for ability: Ability in abilities:
+	var all_abilities: Array[Ability] = hero.get_all_abilities()
+	
+	for ability: Ability in all_abilities:
 		var button: Button = Button.new()
 		button.text = ability.ability_name + " (" + str(ability.ap_cost) + " AP)"
 		button.tooltip_text = ability.description
 		
-		# Подключаем сигнал
-		button.pressed.connect(_on_ability_button_pressed.bind(ability.ability_name))
+		# Проверяем доступность способности
+		var is_available: bool = ability.can_use(hero, hero.current_level)
+		
+		# Для способностей с целями проверяем наличие целей
+		if is_available and ability.target_type != Ability.TargetType.NONE:
+			is_available = ability.has_valid_targets(hero, hero.current_level)
+		
+		button.disabled = not is_available
+		
+		if is_available:
+			# Подключаем сигнал только для доступных кнопок
+			button.pressed.connect(_on_ability_button_pressed.bind(ability.ability_name))
+		else:
+			# Для недоступных показываем причину в tooltip
+			if hero.current_ap < ability.ap_cost:
+				button.tooltip_text += "\n(Недостаточно AP)"
+			elif ability.target_type == Ability.TargetType.TILE and ability.ability_name == "Перемещение":
+				if hero.move_budget <= 0:
+					button.tooltip_text += "\n(Нет запаса движения)"
+				else:
+					button.tooltip_text += "\n(Нет доступных клеток)"
+			elif ability.target_type == Ability.TargetType.DIRECTION:
+				button.tooltip_text += "\n(Нет целей рядом)"
 		
 		ability_container.add_child(button)
+	
+	# Обновляем запас движения
+	update_move_budget(hero.move_budget, hero.max_move_budget)
 
 
 func clear_abilities() -> void:
 	_clear_ability_buttons()
+	hide_move_budget()
 
 
 func _clear_ability_buttons() -> void:
