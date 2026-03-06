@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://d0vvc8jpfp1fs"]
 
-[ext_resource type="PackedScene" uid="uid://cv0pxxyxn3hv4" path="res://scenes/Entity.tscn" id="1_3gvst"]
-[ext_resource type="Script" uid="uid://ci4muiryc22td" path="res://scripts/enemy.gd" id="2_55jtl"]
-[ext_resource type="Texture2D" uid="uid://b827idwn8p2wm" path="res://resources/caution .png" id="3_mpr68"]
+[ext_resource type="PackedScene" uid="uid://cv0pxxyxn3hv4" path="res://scenes/entities/Entity.tscn" id="1_3gvst"]
+[ext_resource type="Script" uid="uid://ci4muiryc22td" path="res://scripts/entities/enemy.gd" id="2_55jtl"]
+[ext_resource type="Texture2D" uid="uid://b827idwn8p2wm" path="res://resources/caution.png" id="3_mpr68"]
 
 [node name="Entity" unique_id=1285341194 instance=ExtResource("1_3gvst")]
 script = ExtResource("2_55jtl")

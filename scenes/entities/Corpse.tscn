@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cdsh88kav2lkf"]
 
-[ext_resource type="Script" uid="uid://berka3rgnmi0d" path="res://scripts/obstacle.gd" id="1_obstacle"]
+[ext_resource type="Script" uid="uid://berka3rgnmi0d" path="res://scripts/entities/obstacle.gd" id="1_obstacle"]
 [ext_resource type="Texture2D" uid="uid://bnmyia3lvh1ec" path="res://resources/momonga_Dungeon.png" id="2_5t5to"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_corpse"]
