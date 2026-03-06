@@ -24,8 +24,10 @@ func _calculate_move_direction() -> Vector2i:
         if not entity.current_level:
                 return Vector2i.ZERO
         
-        var target_pos: Vector2i = entity.current_level.get_nearest_hero_position(entity.tile_position)
-        var direction: Vector2i = target_pos - entity.tile_position
+        # Используем актуальную позицию из _occupied
+        var my_pos: Vector2i = entity.current_level.get_entity_position(entity)
+        var target_pos: Vector2i = entity.current_level.get_nearest_hero_position(my_pos)
+        var direction: Vector2i = target_pos - my_pos
         
         var move_dir: Vector2i = Vector2i.ZERO
         
